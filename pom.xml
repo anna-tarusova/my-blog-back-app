@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>ru.practicum</groupId>
+    <artifactId>my-blog-back-app-local</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+
+    <properties>
+        <!-- Версия JDK задаётся один раз: компилятор получает опцию release=21,
+             это убирает предупреждение "location of system modules is not set in conjunction with -source 21" -->
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Версии управляются через BOM-ы: все модули Spring Framework и Spring Data будут одной совместимой версии -->
+        <spring-framework.version>6.1.11</spring-framework.version>
+        <spring-data-bom.version>2024.0.2</spring-data-bom.version>
+        <!-- Spring Framework 6.1 работает на Servlet API 6.0 (Jakarta EE 10) -->
+        <jakarta-servlet-api.version>6.0.0</jakarta-servlet-api.version>
+        <!-- tomcat-embed-core 10.1.x - реализация Servlet 6.0 -->
+        <tomcat-embed.version>10.1.26</tomcat-embed.version>
+        <!-- Логирование: slf4j-api и logback-classic берутся одной совместимой парой -->
+        <slf4j.version>2.0.13</slf4j.version>
+        <logback.version>1.5.6</logback.version>
+        <jackson.version>2.17.2</jackson.version>
+        <hikaricp.version>5.1.0</hikaricp.version>
+        <postgresql.version>42.7.3</postgresql.version>
+        <h2.version>2.2.224</h2.version>
+        <!-- Lombok 1.18.38+ работает на JDK 21-24 (Maven запускается на JDK 24, IDE - на JDK 21) -->
+        <lombok.version>1.18.38</lombok.version>
+        <junit-jupiter.version>5.10.3</junit-jupiter.version>
+        <!-- Hamcrest нужен для MockMvc/MatcherAssert из spring-test (у spring-test он optional и не подтягивается) -->
+        <hamcrest.version>2.2</hamcrest.version>
+        <!-- Mockito: моки в модульных тестах (5.24.0 тянет Byte Buddy с поддержкой JDK 24) -->
+        <mockito.version>5.24.0</mockito.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven-war-plugin.version>3.4.0</maven-war-plugin.version>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Единые версии всех модулей Spring Framework: spring-core, spring-beans, spring-context,
+                 spring-aop, spring-expression, spring-web, spring-webmvc, spring-jdbc, spring-test и т.д. -->
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-framework-bom</artifactId>
+                <version>${spring-framework.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Единые версии всех модулей Spring Data: spring-data-jdbc, spring-data-commons и т.д. -->
+            <dependency>
+                <groupId>org.springframework.data</groupId>
+                <artifactId>spring-data-bom</artifactId>
+                <version>${spring-data-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Spring Framework: IoC/DI-контейнер (spring-core, spring-beans, spring-context, spring-aop, spring-expression) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+
+        <!-- Spring Web: MVC-контейнер для REST-контроллеров
+             (транзитивно подтягивает spring-web, spring-beans, spring-core) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+        </dependency>
+
+        <!-- Spring Web: web-абстракции (HTTP-клиент, конвертеры, Multipart) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+
+        <!-- Spring Data JDBC: репозитории поверх Spring JDBC
+             (транзитивно подтягивает spring-jdbc, spring-tx, spring-data-commons) -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-jdbc</artifactId>
+        </dependency>
+
+        <!-- Servlet API: нужен для spring-web/spring-webmvc и MockMvc (в Spring MVC-приложении предоставляется контейнером) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>${jakarta-servlet-api.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Spring Test Framework: интеграционные и модульные тесты
+             (ApplicationContext, MockMvc, Mockito-поддержка, @Transactional в тестах) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit 5: API, движок и параметризованные тесты (junit-jupiter-api + junit-jupiter-engine + junit-jupiter-params) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit-jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Hamcrest: матчеры для MockMvc из spring-test (например, status().isOk(), content().string(...)) -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <version>${hamcrest.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Mockito: моки для модульных тестов сервисов -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Встроенный Tomcat: только для локального запуска из IDE (Main).
+             scope=provided: в war-файл не попадает, в сервлет-контейнере Tomcat уже есть -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+            <version>${tomcat-embed.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- JSON: Jackson, Spring MVC использует его для @RequestBody/@ResponseBody -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- Логирование: SLF4J API (фасад) + Logback (реализация).
+             slf4j-api фиксируем явно, иначе придёт старая 2.0.2 транзитивно из spring-data-jdbc -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+
+        <!-- Пул соединений с БД для Spring Data JDBC -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>${hikaricp.version}</version>
+        </dependency>
+
+        <!-- Драйвер PostgreSQL: нужен только в рантайме (JDBC-драйвер регистрируется сам через SPI) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- H2: in-memory БД для тестов, чтобы репозитории проверялись без запуска PostgreSQL
+             (не нужна, если тесты будут использовать Testcontainers или реальную БД) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Lombok: генерация boilerplate-кода (@Getter/@Setter, @Data, @RequiredArgsConstructor, @Builder...)
+             scope=provided: в итоговый артефакт не попадает, нужен только на этапе компиляции -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Компилятор: release=21 (из maven.compiler.release), сохранение имён параметров
+                 и явный annotation processor path для Lombok -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <release>21</release>
+                    <!-- -parameters: имена параметров конструкторов/методов сохраняются в байт-коде,
+                         их используют Spring MVC и Spring Data -->
+                    <parameters>true</parameters>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
+            <!-- Сборка war: src/main/webapp (WEB-INF/web.xml) + классы и зависимости в WEB-INF/lib.
+                 Зависимости со scope provided (servlet-api, tomcat-embed) в war не попадают -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>${maven-war-plugin.version}</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+
+            <!-- Явная версия surefire: JUnit 5 запускается через junit-platform-surefire-provider.
+                 argLine: Tomcat при undeploy webapp проверяет утечки ThreadLocal/RMI и требует
+                 открытия внутренних пакетов JDK (иначе предупреждения WebappClassLoaderBase) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <argLine>
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.rmi/sun.rmi.transport=ALL-UNNAMED
+                    </argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

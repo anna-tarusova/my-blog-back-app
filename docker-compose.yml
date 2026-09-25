@@ -1,0 +1,16 @@
+# PostgreSQL для локального запуска приложения: docker compose up -d
+services:
+  postgres:
+    image: postgres:16
+    container_name: my-blog-postgres
+    environment:
+      POSTGRES_DB: blog
+      POSTGRES_USER: blog
+      POSTGRES_PASSWORD: blog
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
