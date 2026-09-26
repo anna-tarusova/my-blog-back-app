@@ -2,12 +2,15 @@ package ru.practicum.dao;
 
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+import ru.practicum.dto.CommentDto;
+import ru.practicum.dto.PostImageDto;
 import ru.practicum.dto.PostPreview;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Реализация SQL-запросов ленты постов на {@link NamedParameterJdbcTemplate}.
@@ -45,6 +48,55 @@ public class PostDaoImpl implements PostDao {
             ORDER BY t.post_id, t.id
             """;
 
+    private static final String DELETE_TAGS_BY_POST_ID_SQL = """
+            DELETE FROM tags
+            WHERE post_id = :postId
+            """;
+
+    private static final String COUNT_LIKES_BY_POST_ID_SQL = """
+            SELECT COUNT(*)
+            FROM likes
+            WHERE post_id = :postId
+            """;
+
+    private static final String COUNT_COMMENTS_BY_POST_ID_SQL = """
+            SELECT COUNT(*)
+            FROM comments
+            WHERE post_id = :postId
+            """;
+
+    private static final String INSERT_LIKE_SQL = """
+            INSERT INTO likes (post_id)
+            VALUES (:postId)
+            """;
+
+    private static final String DELETE_IMAGE_BY_POST_ID_SQL = """
+            DELETE FROM post_images
+            WHERE post_id = :postId
+            """;
+
+    private static final String INSERT_IMAGE_SQL = """
+            INSERT INTO post_images (post_id, file_name, content_type, data)
+            VALUES (:postId, :fileName, :contentType, :data)
+            """;
+
+    private static final String FIND_COMMENTS_BY_POST_ID_SQL = """
+            SELECT c.id AS id,
+                   c.post_id AS post_id,
+                   c.text AS text
+            FROM comments c
+            WHERE c.post_id = :postId
+            ORDER BY c.id
+            """;
+
+    private static final String FIND_IMAGE_BY_POST_ID_SQL = """
+            SELECT i.file_name AS file_name,
+                   i.content_type AS content_type,
+                   i.data AS data
+            FROM post_images i
+            WHERE i.post_id = :postId
+            """;
+
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public PostDaoImpl(NamedParameterJdbcTemplate jdbcTemplate) {
@@ -73,6 +125,60 @@ public class PostDaoImpl implements PostDao {
                 resultSet.getLong("comments_count")));
 
         return posts.isEmpty() ? posts : attachTags(posts);
+    }
+
+    @Override
+    public void deleteTagsByPostId(long postId) {
+        jdbcTemplate.update(DELETE_TAGS_BY_POST_ID_SQL, Map.of("postId", postId));
+    }
+
+    @Override
+    public long countLikesByPostId(long postId) {
+        return count(COUNT_LIKES_BY_POST_ID_SQL, postId);
+    }
+
+    @Override
+    public long countCommentsByPostId(long postId) {
+        return count(COUNT_COMMENTS_BY_POST_ID_SQL, postId);
+    }
+
+    @Override
+    public void insertLike(long postId) {
+        jdbcTemplate.update(INSERT_LIKE_SQL, Map.of("postId", postId));
+    }
+
+    @Override
+    public void saveImage(long postId, String fileName, String contentType, byte[] data) {
+        jdbcTemplate.update(DELETE_IMAGE_BY_POST_ID_SQL, Map.of("postId", postId));
+        jdbcTemplate.update(INSERT_IMAGE_SQL, Map.of(
+                "postId", postId,
+                "fileName", fileName,
+                "contentType", contentType,
+                "data", data));
+    }
+
+    @Override
+    public List<CommentDto> findCommentsByPostId(long postId) {
+        return jdbcTemplate.query(FIND_COMMENTS_BY_POST_ID_SQL, Map.of("postId", postId),
+                (resultSet, rowNumber) -> new CommentDto(
+                        resultSet.getLong("id"),
+                        resultSet.getString("text"),
+                        resultSet.getLong("post_id")));
+    }
+
+    @Override
+    public Optional<PostImageDto> findImageByPostId(long postId) {
+        List<PostImageDto> images = jdbcTemplate.query(FIND_IMAGE_BY_POST_ID_SQL, Map.of("postId", postId),
+                (resultSet, rowNumber) -> new PostImageDto(
+                        resultSet.getString("file_name"),
+                        resultSet.getString("content_type"),
+                        resultSet.getBytes("data")));
+        return images.stream().findFirst();
+    }
+
+    private long count(String sql, long postId) {
+        Long count = jdbcTemplate.queryForObject(sql, Map.of("postId", postId), Long.class);
+        return count == null ? 0L : count;
     }
 
     private List<PostPreview> attachTags(List<PostPreview> posts) {

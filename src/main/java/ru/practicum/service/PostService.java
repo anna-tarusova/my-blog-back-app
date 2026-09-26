@@ -1,8 +1,13 @@
 package ru.practicum.service;
 
+import ru.practicum.dto.CommentDto;
 import ru.practicum.dto.PostCreateDto;
 import ru.practicum.dto.PostDto;
+import ru.practicum.dto.PostImageDto;
+import ru.practicum.dto.PostUpdateDto;
 import ru.practicum.dto.PostsPageDto;
+
+import java.util.List;
 
 /**
  * Бизнес-логика постов блога.
@@ -27,4 +32,70 @@ public interface PostService {
      * @throws IllegalArgumentException если обязательные поля не заполнены
      */
     PostDto createPost(PostCreateDto request);
+
+    /**
+     * Редактирует пост: обновляет название, текст и полностью заменяет список тегов.
+     *
+     * @param id      идентификатор поста из пути запроса
+     * @param request идентификатор, название, текст (Markdown) и теги поста
+     * @return обновлённый пост; {@code likesCount} и {@code commentsCount} — фактические значения
+     * @throws java.util.NoSuchElementException если пост с таким id не найден
+     * @throws IllegalArgumentException         если обязательные поля не заполнены
+     *                                         или {@code id} в теле запроса не совпадает с id в пути
+     */
+    PostDto updatePost(Long id, PostUpdateDto request);
+
+    /**
+     * Удаляет пост вместе со всеми связанными данными: комментариями, тегами, лайками и картинкой
+     * (строки дочерних таблиц удаляются каскадно по внешним ключам {@code ON DELETE CASCADE}).
+     *
+     * @param id идентификатор поста из пути запроса
+     * @throws java.util.NoSuchElementException если пост с таким id не найден
+     * @throws IllegalArgumentException         если {@code id} не задан
+     */
+    void deletePost(Long id);
+
+    /**
+     * Добавляет +1 к числу лайков поста.
+     *
+     * @param id идентификатор поста из пути запроса
+     * @return обновлённое число лайков поста (фактическое значение после инкремента)
+     * @throws java.util.NoSuchElementException если пост с таким id не найден
+     * @throws IllegalArgumentException         если {@code id} не задан
+     */
+    long incrementLikes(Long id);
+
+    /**
+     * Обновляет (полностью заменяет) картинку поста: одна картинка на пост,
+     * повторная загрузка затирает прежнюю.
+     *
+     * @param id          идентификатор поста из пути запроса
+     * @param fileName    имя файла из части {@code image} multipart-запроса
+     * @param contentType MIME-тип файла; пустое значение заменяется на {@code application/octet-stream}
+     * @param data        содержимое файла
+     * @throws java.util.NoSuchElementException если пост с таким id не найден
+     * @throws IllegalArgumentException         если {@code id} не задан, имя файла пустое
+     *                                         или файл не содержит байтов
+     */
+    void updateImage(Long id, String fileName, String contentType, byte[] data);
+
+    /**
+     * Картинка поста для отдачи в теле ответа: MIME-тип, сохранённый при загрузке, и сырые байты.
+     *
+     * @param id идентификатор поста из пути запроса
+     * @return картинка поста
+     * @throws java.util.NoSuchElementException если пост не найден или картинка не загружена
+     * @throws IllegalArgumentException         если {@code id} не задан
+     */
+    PostImageDto getPostImage(Long id);
+
+    /**
+     * Комментарии поста в порядке добавления (по id возрастанию).
+     *
+     * @param id идентификатор поста из пути запроса
+     * @return список комментариев; у поста без комментариев — пустой список
+     * @throws java.util.NoSuchElementException если пост не найден
+     * @throws IllegalArgumentException         если {@code id} не задан
+     */
+    List<CommentDto> getComments(Long id);
 }

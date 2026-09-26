@@ -41,6 +41,17 @@
             <param-value>ru.practicum.config.WebConfig</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
+        <!--
+            Multipart-загрузка файлов для PUT /api/posts/{id}/image:
+            контейнер должен разбирать multipart/form-data через request.getParts(),
+            иначе StandardServletMultipartResolver не сможет прочитать часть "image".
+            Лимиты продублированы в WebAppInitializer (программная регистрация без web.xml).
+        -->
+        <multipart-config>
+            <max-file-size>10485760</max-file-size>       <!-- 10 МБ -->
+            <max-request-size>15728640</max-request-size> <!-- 15 МБ -->
+            <file-size-threshold>0</file-size-threshold>
+        </multipart-config>
     </servlet>
     <servlet-mapping>
         <servlet-name>dispatcher</servlet-name>

@@ -1,16 +1,21 @@
 package ru.practicum.config;
 
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.ServletRegistration;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -54,6 +59,43 @@ class ServletContainerConfigTest {
                 "имя DispatcherServlet в web.xml должно совпадать с именем в Java-конфигурации");
     }
 
+    @Test
+    void webXmlDeclaresMultipartConfigWithLimitsMatchingJavaConfiguration() throws Exception {
+        Document webXml = parse(WEB_XML);
+
+        assertEquals(1, webXml.getElementsByTagName("multipart-config").getLength(),
+                "web.xml должен объявить <multipart-config> для DispatcherServlet, "
+                        + "иначе контейнер не сможет разобрать multipart/form-data (PUT /api/posts/{id}/image)");
+        assertEquals(List.of(String.valueOf(WebAppInitializer.MAX_FILE_SIZE)),
+                textsOf(webXml, "max-file-size"));
+        assertEquals(List.of(String.valueOf(WebAppInitializer.MAX_REQUEST_SIZE)),
+                textsOf(webXml, "max-request-size"));
+        assertEquals(List.of(String.valueOf(WebAppInitializer.FILE_SIZE_THRESHOLD)),
+                textsOf(webXml, "file-size-threshold"));
+    }
+
+    @Test
+    void javaConfigurationAppliesSameMultipartConfigWhenWebXmlIsAbsent() {
+        AtomicReference<MultipartConfigElement> applied = new AtomicReference<>();
+        ServletRegistration.Dynamic registration = (ServletRegistration.Dynamic) Proxy.newProxyInstance(
+                getClass().getClassLoader(),
+                new Class<?>[]{ServletRegistration.Dynamic.class},
+                (proxy, method, args) -> {
+                    if ("setMultipartConfig".equals(method.getName())) {
+                        applied.set((MultipartConfigElement) args[0]);
+                    }
+                    return null;
+                });
+
+        new TestWebAppInitializer().applyMultipartConfiguration(registration);
+
+        MultipartConfigElement config = applied.get();
+        assertNotNull(config, "customizeRegistration должен настроить multipart-загрузку");
+        assertEquals(WebAppInitializer.MAX_FILE_SIZE, config.getMaxFileSize());
+        assertEquals(WebAppInitializer.MAX_REQUEST_SIZE, config.getMaxRequestSize());
+        assertEquals(WebAppInitializer.FILE_SIZE_THRESHOLD, config.getFileSizeThreshold());
+    }
+
     private static Document parse(File file) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -87,6 +129,10 @@ class ServletContainerConfigTest {
 
         String servletName() {
             return getServletName();
+        }
+
+        void applyMultipartConfiguration(ServletRegistration.Dynamic registration) {
+            customizeRegistration(registration);
         }
     }
 }

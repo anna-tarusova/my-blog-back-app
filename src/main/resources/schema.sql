@@ -36,3 +36,13 @@ CREATE TABLE IF NOT EXISTS likes (
 CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments (post_id);
 CREATE INDEX IF NOT EXISTS idx_tags_post_id ON tags (post_id);
 CREATE INDEX IF NOT EXISTS idx_likes_post_id ON likes (post_id);
+
+-- Картинка поста (одна на пост): имя файла, MIME-тип и сами байты.
+-- Обновляется через PUT /api/posts/{id}/image и удаляется каскадно вместе с постом.
+CREATE TABLE IF NOT EXISTS post_images (
+    post_id BIGINT PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL,
+    content_type VARCHAR(255) NOT NULL,
+    data BYTEA NOT NULL,
+    CONSTRAINT fk_post_images_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
+);

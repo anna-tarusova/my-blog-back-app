@@ -1,7 +1,9 @@
 package ru.practicum.config;
 
+import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRegistration;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 /**
@@ -19,6 +21,15 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
 
     private static final String DISPATCHER_SERVLET_NAME = "dispatcher";
 
+    /** Максимальный размер одного файла multipart-загрузки (10 МБ). */
+    static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
+
+    /** Максимальный размер всего multipart-запроса (15 МБ). */
+    static final long MAX_REQUEST_SIZE = 15L * 1024 * 1024;
+
+    /** Порог буферизации файла на диск: 0 — сразу писать во временный файл. */
+    static final int FILE_SIZE_THRESHOLD = 0;
+
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException {
         if (servletContext.getServletRegistration(getServletName()) == null) {
@@ -27,6 +38,17 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
         }
         servletContext.log("Servlet '" + getServletName() + "' is already declared in web.xml, "
                 + "Spring context is created by ContextLoaderListener");
+    }
+
+    /**
+     * Multipart-конфигурация для {@code PUT /api/posts/{id}/image} при программной регистрации
+     * (когда web.xml отсутствует). Соответствует элементу {@code <multipart-config>}
+     * в web.xml — значения проверяются тестом {@code ServletContainerConfigTest}.
+     */
+    @Override
+    protected void customizeRegistration(ServletRegistration.Dynamic registration) {
+        registration.setMultipartConfig(new MultipartConfigElement(
+                System.getProperty("java.io.tmpdir"), MAX_FILE_SIZE, MAX_REQUEST_SIZE, FILE_SIZE_THRESHOLD));
     }
 
     @Override
