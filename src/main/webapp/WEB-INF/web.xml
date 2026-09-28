@@ -12,6 +12,7 @@
         Классы конфигурации перечисляются через AnnotationConfigWebApplicationContext:
         контейнер сам создаёт и поднимает Spring-контекст по этим классам.
     -->
+
     <context-param>
         <param-name>contextClass</param-name>
         <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
@@ -48,9 +49,8 @@
             Лимиты продублированы в WebAppInitializer (программная регистрация без web.xml).
         -->
         <multipart-config>
-            <max-file-size>10485760</max-file-size>       <!-- 10 МБ -->
-            <max-request-size>15728640</max-request-size> <!-- 15 МБ -->
-            <file-size-threshold>0</file-size-threshold>
+            <max-file-size>52428800</max-file-size> <!-- 50MB -->
+            <max-request-size>209715200</max-request-size> <!-- 200MB -->
         </multipart-config>
     </servlet>
     <servlet-mapping>

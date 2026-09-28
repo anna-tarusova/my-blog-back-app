@@ -8,10 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import ru.practicum.exceptions.NotFoundException;
 
 import java.util.NoSuchElementException;
 
@@ -24,6 +26,14 @@ import java.util.NoSuchElementException;
 public class ApiExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
+    @ExceptionHandler({
+            NotFoundException.class,
+            HttpClientErrorException.NotFound.class})
+    public ResponseEntity<String> handle404(Exception exception) {
+        log.debug("Request rejected with 404: {}", exception.getMessage());
+        return ResponseEntity.notFound().build();
+    }
 
     @ExceptionHandler({
             MissingServletRequestParameterException.class,

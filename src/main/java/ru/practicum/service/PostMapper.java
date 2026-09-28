@@ -2,13 +2,12 @@ package ru.practicum.service;
 
 import org.springframework.stereotype.Component;
 import ru.practicum.dto.PostDto;
-import ru.practicum.dto.PostPreview;
 import ru.practicum.model.Post;
 
 import java.util.List;
 
 /**
- * Преобразование постов из формата БД ({@link PostPreview}) в формат API ({@link PostDto}).
+ * Преобразование постов из формата БД в формат API ({@link PostDto}).
  * Правила представления: обрезка длинного текста и теги без символа "#".
  */
 @Component
@@ -19,22 +18,6 @@ public class PostMapper {
 
     private static final String ELLIPSIS = "…";
     private static final String TAG_PREFIX = "#";
-
-    public List<PostDto> toDtos(List<PostPreview> previews) {
-        return previews.stream()
-                .map(this::toDto)
-                .toList();
-    }
-
-    public PostDto toDto(PostPreview preview) {
-        return new PostDto(
-                preview.id(),
-                preview.title(),
-                toPreviewText(preview.text()),
-                withoutTagPrefixes(preview.tags()),
-                preview.likesCount(),
-                preview.commentsCount());
-    }
 
     /**
      * Только что созданный пост: текст отдаётся целиком (без обрезки под ленту),

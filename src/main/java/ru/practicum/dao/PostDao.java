@@ -1,62 +1,76 @@
 package ru.practicum.dao;
 
-import ru.practicum.dto.CommentDto;
-import ru.practicum.dto.PostImageDto;
-import ru.practicum.dto.PostPreview;
+import org.springframework.data.jdbc.repository.query.Modifying;
+import org.springframework.data.jdbc.repository.query.Query;
+import org.springframework.data.repository.query.Param;
+import ru.practicum.dto.PostDto;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Кастомная (SQL) часть репозитория постов: запросы ленты, которые не выражаются CRUD-методами Spring Data.
- * Реализация — {@link PostDaoImpl}, Spring Data JDBC «подмешивает» её в {@link PostRepository}.
- */
 public interface PostDao {
+    @Query("""
+            SELECT 
+                p.ID,
+                p.TITLE,
+                p.TEXT,
+                COALESCE(p.LIKES_COUNT, 0) AS LIKES_COUNT,
+                COUNT(DISTINCT c.ID) AS COMMENTS_COUNT,
+                COALESCE(
+                     (SELECT ARRAY_AGG(t.NAME) FROM TAGS t WHERE t.POST_ID = p.ID),
+                     ARRAY[]::TEXT[]
+                 ) AS TAGS
+            FROM POSTS p
+            LEFT JOIN COMMENTS c ON c.POST_ID = p.ID
+            WHERE (:search IS NULL OR :search = '' 
+                   OR p.TITLE ILIKE '%' || :search || '%' 
+                   OR p.TEXT ILIKE '%' || :search || '%')
+            GROUP BY p.ID, p.TITLE, p.TEXT, p.LIKES_COUNT
+            ORDER BY p.ID DESC
+            LIMIT :limit OFFSET :offset
+            """)
+    List<PostDto> findPostsPage(@Param("search") String search,
+                                @Param("limit") int limit,
+                                @Param("offset") int offset);
 
-    /** Общее количество постов, в названии которых встречается {@code search} (без учёта регистра). */
-    long countBySearch(String search);
+    @Query("""
+            SELECT COUNT(*)
+            FROM POSTS p
+            WHERE (:search IS NULL OR :search = '' 
+                   OR p.TITLE ILIKE '%' || :search || '%' 
+                   OR p.TEXT ILIKE '%' || :search || '%')
+            """)
+    long countPosts(@Param("search") String search);
 
-    /**
-     * Страница постов для ленты вместе с числом лайков, числом комментариев и списком тегов.
-     * Посты отсортированы от новых к старым (по id по убыванию).
-     *
-     * @param search подстрока названия поста (без учёта регистра), пустая строка — без фильтра
-     * @param limit  размер страницы
-     * @param offset смещение первой записи страницы
-     */
-    List<PostPreview> findPreviewPage(String search, int limit, long offset);
+    @Query("""
+            SELECT 
+                p.ID,
+                p.TITLE,
+                p.TEXT,
+                COALESCE(p.LIKES_COUNT, 0) AS LIKES_COUNT,
+                COUNT(DISTINCT c.ID) AS COMMENTS_COUNT,
+                COALESCE(
+                     (SELECT ARRAY_AGG(t.NAME) FROM TAGS t WHERE t.POST_ID = p.ID),
+                     ARRAY[]::TEXT[]
+                 ) AS TAGS
+            FROM POSTS p
+            LEFT JOIN COMMENTS c ON c.POST_ID = p.ID
+            WHERE p.ID = :id
+            GROUP BY p.ID, p.TITLE, p.TEXT, p.LIKES_COUNT
+            """)
+    Optional<PostDto> findPostDtoById(@Param("id") Long id);
 
-    /** Удаляет все теги поста (используется при редактировании: список тегов заменяется целиком). */
-    void deleteTagsByPostId(long postId);
+    @Modifying
+    @Query("UPDATE POSTS SET LIKES_COUNT = LIKES_COUNT + 1 WHERE ID = :id")
+    int incrementLikes(@Param("id") Long id);
 
-    /** Число лайков поста. */
-    long countLikesByPostId(long postId);
+    @Query("SELECT LIKES_COUNT FROM POSTS WHERE ID = :id")
+    Optional<Long> findLikesCountById(@Param("id") Long id);
 
-    /** Число комментариев поста. */
-    long countCommentsByPostId(long postId);
+    @Modifying
+    @Query("UPDATE POSTS SET IMAGE = :image WHERE ID = :id")
+    int updateImage(@Param("id") Long id, @Param("image") byte[] image);
 
-    /** Добавляет один лайк поста (строка в таблице likes). */
-    void insertLike(long postId);
-
-    /**
-     * Сохраняет или полностью заменяет картинку поста (upsert: старая строка удаляется, новая вставляется).
-     *
-     * @param postId      идентификатор поста — существование поста проверяется до вызова (внешний ключ)
-     * @param fileName    оригинальное имя файла
-     * @param contentType MIME-тип файла (не пустой)
-     * @param data        содержимое файла
-     */
-    void saveImage(long postId, String fileName, String contentType, byte[] data);
-
-    /**
-     * Комментарии поста в порядке добавления (по id возрастанию).
-     * Существование поста проверяется до вызова; для поста без комментариев — пустой список.
-     */
-    List<CommentDto> findCommentsByPostId(long postId);
-
-    /**
-     * Картинка поста (имя файла, MIME-тип, содержимое) или пустой {@code Optional},
-     * если картинка не загружена. Существование поста проверяется до вызова.
-     */
-    Optional<PostImageDto> findImageByPostId(long postId);
+    @Query("SELECT IMAGE FROM POSTS WHERE ID = :id")
+    Optional<byte[]> findImageById(@Param("id") Long id);
 }

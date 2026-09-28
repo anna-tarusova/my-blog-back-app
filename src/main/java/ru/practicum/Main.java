@@ -10,6 +10,8 @@ import org.springframework.web.servlet.DispatcherServlet;
 import ru.practicum.config.AppConfig;
 import ru.practicum.config.WebConfig;
 
+import java.io.File;
+
 /**
  * Точка входа: поднимает встроенный Tomcat и регистрирует DispatcherServlet,
  * поэтому отдельный контейнер сервлетов и web.xml не нужны.
@@ -34,7 +36,8 @@ public class Main {
         tomcat.setPort(port);
         tomcat.getConnector();
 
-        Context context = tomcat.addContext("", null);
+        String webappDirLocation = "src/main/webapp/WEB-INF";
+        Context context = tomcat.addWebapp("", new File(webappDirLocation).getAbsolutePath());
 
         AnnotationConfigWebApplicationContext rootContext = new AnnotationConfigWebApplicationContext();
         rootContext.register(AppConfig.class);

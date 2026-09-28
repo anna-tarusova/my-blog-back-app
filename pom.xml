@@ -95,8 +95,7 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>${jakarta-servlet-api.version}</version>
-            <scope>provided</scope>
+            <version>6.0.0</version>
         </dependency>
 
         <!-- Spring Test Framework: интеграционные и модульные тесты
@@ -112,6 +111,14 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${junit-jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Jayway JsonPath (для jsonPath()) -->
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>2.9.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -143,7 +150,15 @@
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
             <version>${tomcat-embed.version}</version>
-            <scope>provided</scope>
+        </dependency>
+
+        <!-- Движок JSP (Jasper) для встроенного Tomcat.
+        Необходим, потому что Tomcat по умолчанию пытается зарегистрировать
+        JspServlet при старте -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+            <version>${tomcat-embed.version}</version>
         </dependency>
 
         <!-- JSON: Jackson, Spring MVC использует его для @RequestBody/@ResponseBody -->

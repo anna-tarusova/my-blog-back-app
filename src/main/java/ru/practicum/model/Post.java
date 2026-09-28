@@ -25,4 +25,7 @@ public class Post {
 
     /** Текст поста в формате Markdown. */
     private String text;
+
+    private int likesCount;
+    private byte[] image;
 }
