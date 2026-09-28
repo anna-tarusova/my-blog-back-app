@@ -26,18 +26,4 @@ public class PostMapper {
     public PostDto toCreatedDto(Post post, List<String> tags) {
         return new PostDto(post.getId(), post.getTitle(), post.getText(), tags, 0L, 0L);
     }
-
-    private String toPreviewText(String text) {
-        if (text == null || text.length() <= MAX_TEXT_LENGTH) {
-            return text;
-        }
-        return text.substring(0, MAX_TEXT_LENGTH) + ELLIPSIS;
-    }
-
-    /** В БД теги хранятся так, как их ввёл пользователь (возможно, с "#"), а API отдаёт их без "#". */
-    private List<String> withoutTagPrefixes(List<String> tags) {
-        return tags.stream()
-                .map(tag -> tag.startsWith(TAG_PREFIX) ? tag.substring(TAG_PREFIX.length()) : tag)
-                .toList();
-    }
 }

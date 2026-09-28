@@ -1,13 +1,10 @@
 package ru.practicum.service.impl;
 
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.dao.CommentRepository;
-import ru.practicum.dao.PostDao;
 import ru.practicum.dao.PostRepository;
 import ru.practicum.dao.TagRepository;
 import ru.practicum.dto.CommentCreateDto;
@@ -15,12 +12,10 @@ import ru.practicum.dto.CommentDto;
 import ru.practicum.dto.CommentUpdateDto;
 import ru.practicum.dto.PostCreateDto;
 import ru.practicum.dto.PostDto;
-import ru.practicum.dto.PostImageDto;
 import ru.practicum.dto.PostUpdateDto;
 import ru.practicum.dto.PostsPageDto;
 import ru.practicum.exceptions.NotFoundException;
 import ru.practicum.model.Comment;
-import ru.practicum.model.Page;
 import ru.practicum.model.Post;
 import ru.practicum.model.Tag;
 import ru.practicum.service.PostMapper;

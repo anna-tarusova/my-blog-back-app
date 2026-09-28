@@ -5,7 +5,6 @@ import ru.practicum.dto.CommentDto;
 import ru.practicum.dto.CommentUpdateDto;
 import ru.practicum.dto.PostCreateDto;
 import ru.practicum.dto.PostDto;
-import ru.practicum.dto.PostImageDto;
 import ru.practicum.dto.PostUpdateDto;
 import ru.practicum.dto.PostsPageDto;
 
