@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.dao.CommentRepository;
+import ru.practicum.dao.PostDao;
 import ru.practicum.dao.PostRepository;
 import ru.practicum.dao.TagRepository;
 import ru.practicum.dto.CommentCreateDto;
@@ -25,6 +26,7 @@ import ru.practicum.model.Tag;
 import ru.practicum.service.PostMapper;
 import ru.practicum.service.PostService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -58,12 +60,19 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostDto getPost(long id) {
-        Optional<PostDto> post = postRepository.findPostDtoById(id);
-        if (post.isEmpty())
+        Optional<PostDto> postOpt = postRepository.findPostDtoById(id);
+        if (postOpt.isEmpty())
         {
             throw new NotFoundException("post not found");
         }
-        return post.get();
+
+        PostDto post = postOpt.get();
+        post.setTags(new ArrayList<>());
+        for (String tag : postRepository.findTags(post.getId())) {
+            post.getTags().add(tag);
+        }
+
+        return post;
     }
 
     @Override
@@ -87,6 +96,12 @@ public class PostServiceImpl implements PostService {
         } else {
             int offset = (pageNumber - 1) * pageSize;
             posts = postRepository.findPostsPage(normalizedSearch, pageSize, offset);
+            for (PostDto post : posts) {
+                post.setTags(new ArrayList<>());
+                for (String tag : postRepository.findTags(post.getId())) {
+                    post.getTags().add(tag);
+                }
+            }
         }
 
         boolean hasPrev = pageNumber > 1;

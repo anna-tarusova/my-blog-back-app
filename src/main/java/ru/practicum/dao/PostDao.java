@@ -15,11 +15,7 @@ public interface PostDao {
                 p.TITLE,
                 p.TEXT,
                 COALESCE(p.LIKES_COUNT, 0) AS LIKES_COUNT,
-                COUNT(DISTINCT c.ID) AS COMMENTS_COUNT,
-                COALESCE(
-                     (SELECT ARRAY_AGG(t.NAME) FROM TAGS t WHERE t.POST_ID = p.ID),
-                     ARRAY[]::TEXT[]
-                 ) AS TAGS
+                COUNT(DISTINCT c.ID) AS COMMENTS_COUNT
             FROM POSTS p
             LEFT JOIN COMMENTS c ON c.POST_ID = p.ID
             WHERE (:search IS NULL OR :search = '' 
@@ -32,6 +28,14 @@ public interface PostDao {
     List<PostDto> findPostsPage(@Param("search") String search,
                                 @Param("limit") int limit,
                                 @Param("offset") int offset);
+
+    @Query("""
+            SELECT 
+                name 
+            FROM tags
+            WHERE post_id = :id
+            """)
+    List<String> findTags(@Param("id") Long id);
 
     @Query("""
             SELECT COUNT(*)
@@ -48,11 +52,7 @@ public interface PostDao {
                 p.TITLE,
                 p.TEXT,
                 COALESCE(p.LIKES_COUNT, 0) AS LIKES_COUNT,
-                COUNT(DISTINCT c.ID) AS COMMENTS_COUNT,
-                COALESCE(
-                     (SELECT ARRAY_AGG(t.NAME) FROM TAGS t WHERE t.POST_ID = p.ID),
-                     ARRAY[]::TEXT[]
-                 ) AS TAGS
+                COUNT(DISTINCT c.ID) AS COMMENTS_COUNT
             FROM POSTS p
             LEFT JOIN COMMENTS c ON c.POST_ID = p.ID
             WHERE p.ID = :id

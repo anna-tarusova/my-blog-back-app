@@ -23,7 +23,7 @@ import javax.sql.DataSource;
 @Configuration
 @EnableWebMvc
 @EnableJdbcRepositories(basePackages = "ru.practicum.dao")
-@ComponentScan(basePackages = { "ru.practicum.service", "ru.practicum.controller" })
+@ComponentScan(basePackages = { "ru.practicum.service", "ru.practicum.controller", "ru.practicum.web" })
 @EnableTransactionManagement
 @PropertySource("classpath:db-test.properties")
 public class TestConfig extends AbstractJdbcConfiguration {
