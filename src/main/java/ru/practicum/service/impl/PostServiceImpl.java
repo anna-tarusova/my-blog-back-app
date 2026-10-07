@@ -23,7 +23,6 @@ import ru.practicum.service.PostService;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
@@ -34,9 +33,6 @@ import java.util.Optional;
 public class PostServiceImpl implements PostService {
 
     private static final String TAG_PREFIX = "#";
-
-    /** Значение Content-Type по умолчанию, если multipart-часть не передала MIME-тип. */
-    private static final String DEFAULT_IMAGE_CONTENT_TYPE = "application/octet-stream";
 
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
@@ -132,29 +128,26 @@ public class PostServiceImpl implements PostService {
         String text = requireField(request.text(), "text");
         List<String> tags = normalizeTags(request.tags());
 
-        // Проверяем существование поста
+        // Загрузка существующего поста из БД
         Post existingPost = postRepository.findById(request.id())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
 
-        // Обновляем пост
-        Post updatedPost = Post.builder()
-                .id(existingPost.getId())
-                .title(title)
-                .text(text)
-                .likesCount(existingPost.getLikesCount()) // сохраняем количество лайков
-                .build();
+        existingPost.setTitle(title);
+        existingPost.setText(text);
 
-        postRepository.save(updatedPost);
+        // Сохранение измененного объекта.
+        postRepository.save(existingPost);
 
-        // Удаляем старые теги
+        // Работа с тегами (полная замена)
         tagRepository.deleteByPostId(request.id());
 
-        // Создаем новые теги
-        tagRepository.saveAll(tags.stream()
-                .map(tag -> Tag.builder().postId(request.id()).name(tag).build())
-                .toList());
+        if (tags != null && !tags.isEmpty()) {
+            tagRepository.saveAll(tags.stream()
+                    .map(tag -> Tag.builder().postId(request.id()).name(tag).build())
+                    .toList());
+        }
 
-        // Возвращаем актуальный PostDto с подсчитанными likesCount и commentsCount
+        // Возврат актуального PostDto с подсчитанными likesCount и commentsCount
         return postRepository.findPostDtoById(request.id())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
     }
@@ -327,33 +320,6 @@ public class PostServiceImpl implements PostService {
 
         // Удаляем комментарий
         commentRepository.delete(comment);
-    }
-
-    /** Оба id (поста и комментария) обязаны быть заданы; иначе — 400. */
-    private static void requireIdPair(Long id, Long commentId) {
-        if (id == null || commentId == null) {
-            throw new IllegalArgumentException("id and commentId must not be empty");
-        }
-    }
-
-    /**
-     * Комментарий, принадлежащий посту: пост и комментарий должны существовать,
-     * комментарий другого поста считается ненайденным (404).
-     */
-    private Comment requireCommentOfPost(Long id, Long commentId) {
-        Post post = requirePost(id);
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new NoSuchElementException("Comment not found: " + commentId));
-        if (!post.getId().equals(comment.getPostId())) {
-            throw new NoSuchElementException("Comment " + commentId + " does not belong to post " + id);
-        }
-        return comment;
-    }
-
-    /** Пост по id или {@code NoSuchElementException} (обрабатывается в {@code ApiExceptionHandler} как 404). */
-    private Post requirePost(Long id) {
-        return postRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Post not found: " + id));
     }
 
     private static String requireField(String value, String fieldName) {

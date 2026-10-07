@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE) // Выполняется самым первым
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class ExplicitCorsFilter implements Filter {
 
     @Override

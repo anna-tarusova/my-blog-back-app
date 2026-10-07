@@ -22,7 +22,6 @@ import ru.practicum.dto.PostsPageDto;
 import ru.practicum.model.Comment;
 import ru.practicum.model.Post;
 import ru.practicum.model.Tag;
-import ru.practicum.service.PostService;
 
 import java.util.List;
 
