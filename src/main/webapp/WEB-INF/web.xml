@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                             https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+    <display-name>my-blog-back-app</display-name>
+
+    <!--
+        Корневой контекст Spring (сервисы, DAO, подключение к PostgreSQL).
+        Классы конфигурации перечисляются через AnnotationConfigWebApplicationContext:
+        контейнер сам создаёт и поднимает Spring-контекст по этим классам.
+    -->
+
+    <context-param>
+        <param-name>contextClass</param-name>
+        <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+    </context-param>
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>ru.practicum.config.AppConfig</param-value>
+    </context-param>
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+
+    <!--
+        Web-слой: DispatcherServlet со своим контекстом (контроллеры, обработка ошибок).
+        Родительским для него становится корневой контекст ContextLoaderListener-а,
+        поэтому контроллеры получают бины сервисного слоя.
+    -->
+
+    <filter>
+        <filter-name>corsFilter</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>corsFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <servlet>
+        <servlet-name>dispatcher</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextClass</param-name>
+            <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+        </init-param>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>ru.practicum.config.WebConfig</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+        <!--
+            Multipart-загрузка файлов для PUT /api/posts/{id}/image:
+            контейнер должен разбирать multipart/form-data через request.getParts(),
+            иначе StandardServletMultipartResolver не сможет прочитать часть "image".
+            Лимиты продублированы в WebAppInitializer (программная регистрация без web.xml).
+        -->
+        <multipart-config>
+            <max-file-size>52428800</max-file-size> <!-- 50MB -->
+            <max-request-size>209715200</max-request-size> <!-- 200MB -->
+        </multipart-config>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>dispatcher</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+
+</web-app>

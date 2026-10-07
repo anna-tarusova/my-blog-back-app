@@ -1,0 +1,31 @@
+# PostgreSQL для локального запуска приложения: docker compose up -d
+services:
+  postgres:
+    image: postgres:16
+    container_name: my-blog-postgres
+    environment:
+      POSTGRES_DB: blog
+      POSTGRES_USER: blog
+      POSTGRES_PASSWORD: blog
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+  h2:
+    image: oscarfonts/h2:latest
+    container_name: h2_database
+    ports:
+      - "8082:8082" # Порт для веб-консоли (UI)
+      - "9092:9092" # Порт для TCP-подключения (для ваших приложений)
+    environment:
+      - H2_DB_NAME=mydb             # Имя базы данных
+      - H2_USER=admin               # Логин для подключения
+      - H2_PASSWORD=admin123        # Пароль для подключения
+      # Флаги разрешают подключаться к консоли и TCP извне контейнера
+      - H2_DB_OPTIONS=-webAllowOthers -tcpAllowOthers
+    volumes:
+      # Сохраняем данные на хост-машине, чтобы они не пропали при перезапуске
+      - ./h2_data:/opt/h2-data
+
+volumes:
+  postgres-data:
